@@ -1,19 +1,21 @@
-﻿using System.Collections.Immutable;
+﻿using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Http.Extensions;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using Oidc.OpenIddict.AuthorizationServer;
+using Oidc.OpenIddict.AuthorizationServer.Users;
+using Oidc.OpenIddict.AuthorizationServer.Models;
 using OpenIddict.Abstractions;
-using OpenIddict.Server.AspNetCore;
 using static OpenIddict.Abstractions.OpenIddictConstants;
+using OpenIddict.Server.AspNetCore;
+using System.Collections.Immutable;
+using System.Net;
 using System.Security.Claims;
 using System.Web;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Oidc.OpenIddict.AuthorizationServer;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Http.Extensions;
-using System.Net;
 
 namespace Oidc.OpenIddict.AuthorizationServer.Controllers
 {
@@ -23,19 +25,23 @@ namespace Oidc.OpenIddict.AuthorizationServer.Controllers
         private readonly IOpenIddictApplicationManager _applicationManager;
         private readonly IOpenIddictScopeManager _scopeManager;
         private readonly AuthorizationService _authService;
+        private readonly UserManager<IdentityUser> _userManager;
+        private readonly IUserRepository _userRepo;
 
         public AuthorizationController(
             IOpenIddictApplicationManager applicationManager,
             IOpenIddictScopeManager scopeManager,
+            UserManager<IdentityUser> userManager,
+            IUserRepository userRepo,
             AuthorizationService authService)
         {
             _applicationManager = applicationManager;
             _scopeManager = scopeManager;
             _authService = authService;
+            _userRepo = userRepo;
         }
 
         [HttpGet("~/connect/authorize")]
-        [HttpPost("~/connect/authorize")]
         public async Task<IActionResult> Authorize()
         {
             var request = HttpContext.GetOpenIddictServerRequest() ??
@@ -62,11 +68,18 @@ namespace Oidc.OpenIddict.AuthorizationServer.Controllers
 
             if (!_authService.IsAuthenticated(result, request))
             {
+                bool isValid = false;
                 //check that email and password are valid
+                IdentityUser? iusr = _userManager.FindByEmailAsync(request.Username).Result;
+                if (iusr == null)
+                {
+                    return StatusCode(403);
+                }
+
+                isValid = _userManager.CheckPasswordAsync(iusr, "Heidi23084&").Result;
+
 
                 //here we are assuming email and password are valid
-
-
                 var claims = new List<Claim>
                 {
                     new(ClaimTypes.Email, "email"),

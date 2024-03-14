@@ -9,12 +9,17 @@ using Microsoft.IdentityModel.Tokens;
 using Oidc.OpenIddict.AuthorizationServer;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 using System;
+using Oidc.OpenIddict.AuthorizationServer.Context;
+using Oidc.OpenIddict.AuthorizationServer.Users;
+using Oidc.OpenIddict.AuthorizationServer.Repository;
 
 var builder = WebApplication.CreateBuilder(args);
 
+string ConnectString = "Server=L3\\SQLDEV;Database=OpenIDDictDB;TrustServerCertificate=True;Trusted_Connection=True;MultipleActiveResultSets=true";
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
-    options.UseSqlServer("Server=L3\\SQLDEV;Database=OpenIDDictDB;TrustServerCertificate=True;Trusted_Connection=True;MultipleActiveResultSets=true");
+    options.UseSqlServer(ConnectString);
     options.UseOpenIddict();
 });
 
@@ -49,6 +54,8 @@ builder.Services.AddOpenIddict()
     });
 
 builder.Services.AddTransient<AuthorizationService>();
+builder.Services.AddSingleton<DapperContext>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 builder.Services.AddControllers();
 builder.Services.AddRazorPages();
@@ -63,6 +70,8 @@ builder.Services.AddTransient<ClientsSeeder>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+
 
 builder.Services.AddCors(options =>
 {
