@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 //using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -12,6 +13,7 @@ using System;
 using Oidc.OpenIddict.AuthorizationServer.Context;
 using Oidc.OpenIddict.AuthorizationServer.Users;
 using Oidc.OpenIddict.AuthorizationServer.Repository;
+using Oidc.OpenIddict.AuthorizationServer.Classes;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -84,6 +86,10 @@ builder.Services.AddCors(options =>
             .AllowAnyHeader();
     });
 });
+
+builder.Services.AddDefaultIdentity<IdentityUser<int>>(options => options.SignIn.RequireConfirmedAccount = true)  
+    .AddRoles<IdentityRole<int>>()  //add the role service.  
+    .AddEntityFrameworkStores<ApplicationDbContext>();  
 
 var app = builder.Build();
 

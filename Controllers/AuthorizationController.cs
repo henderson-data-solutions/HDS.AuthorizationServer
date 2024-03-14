@@ -9,6 +9,7 @@ using Microsoft.IdentityModel.Tokens;
 using Oidc.OpenIddict.AuthorizationServer;
 using Oidc.OpenIddict.AuthorizationServer.Users;
 using Oidc.OpenIddict.AuthorizationServer.Models;
+using Oidc.OpenIddict.AuthorizationServer.Classes;
 using OpenIddict.Abstractions;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 using OpenIddict.Server.AspNetCore;
@@ -25,19 +26,20 @@ namespace Oidc.OpenIddict.AuthorizationServer.Controllers
         private readonly IOpenIddictApplicationManager _applicationManager;
         private readonly IOpenIddictScopeManager _scopeManager;
         private readonly AuthorizationService _authService;
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly UserManager<IdentityUser<int>> _userManager;
         private readonly IUserRepository _userRepo;
 
         public AuthorizationController(
             IOpenIddictApplicationManager applicationManager,
             IOpenIddictScopeManager scopeManager,
-            UserManager<IdentityUser> userManager,
+            UserManager<IdentityUser<int>> userManager,
             IUserRepository userRepo,
             AuthorizationService authService)
         {
             _applicationManager = applicationManager;
             _scopeManager = scopeManager;
             _authService = authService;
+            _userManager = userManager;
             _userRepo = userRepo;
         }
 
@@ -68,18 +70,6 @@ namespace Oidc.OpenIddict.AuthorizationServer.Controllers
 
             if (!_authService.IsAuthenticated(result, request))
             {
-                bool isValid = false;
-                //check that email and password are valid
-                IdentityUser? iusr = _userManager.FindByEmailAsync(request.Username).Result;
-                if (iusr == null)
-                {
-                    return StatusCode(403);
-                }
-
-                isValid = _userManager.CheckPasswordAsync(iusr, "Heidi23084&").Result;
-
-
-                //here we are assuming email and password are valid
                 var claims = new List<Claim>
                 {
                     new(ClaimTypes.Email, "email"),
@@ -135,6 +125,25 @@ namespace Oidc.OpenIddict.AuthorizationServer.Controllers
                     RedirectUri = _authService.BuildRedirectUrl(HttpContext.Request, parameters)
                 }, new[] { CookieAuthenticationDefaults.AuthenticationScheme });
             }
+
+            IdentityUser<int>? iusr = null;
+            bool isValid = false;
+            try
+            {
+                
+                //check that email and password are valid
+                iusr = _userManager.FindByEmailAsync("ldew@hendersondatasolutions.com").Result;
+            }
+            catch (Exception ex)
+            {
+                string tmp = ex.Message;
+            }
+            if (iusr == null)
+            {
+                return StatusCode(403);
+            }
+
+            isValid = _userManager.CheckPasswordAsync(iusr, "Heidi23084&").Result;
 
             var consentClaim = result.Principal.GetClaim(Consts.ConsentNaming);
 

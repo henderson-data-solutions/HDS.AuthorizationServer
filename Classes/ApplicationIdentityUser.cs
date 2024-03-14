@@ -2,8 +2,7 @@
 
 namespace Oidc.OpenIddict.AuthorizationServer.Classes
 {
-    public class ApplicationUser : IdentityUser<int>
+    public class ApplicationIdentityUser : IdentityUser<int>
     {
-
     }
 }
