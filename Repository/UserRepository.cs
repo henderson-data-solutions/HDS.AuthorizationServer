@@ -1,12 +1,12 @@
 ﻿using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using System.Data;
-using Oidc.OpenIddict.AuthorizationServer.Context;
-using Oidc.OpenIddict.AuthorizationServer.Models;
-using Oidc.OpenIddict.AuthorizationServer.Users;
+using HDS.AuthorizationServer.Context;
+using HDS.AuthorizationServer.Models;
+using HDS.AuthorizationServer.Users;
 using Dapper;
     
-namespace Oidc.OpenIddict.AuthorizationServer.Repository
+namespace HDS.AuthorizationServer.Repository
 {
     public class UserRepository : IUserRepository
     {

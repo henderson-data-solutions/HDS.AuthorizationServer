@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 
-namespace Oidc.OpenIddict.AuthorizationServer.Classes
+namespace HDS.AuthorizationServer.Classes
 {
     public class ApplicationRole : IdentityRole<int>
     {

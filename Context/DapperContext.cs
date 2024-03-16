@@ -1,16 +1,16 @@
 ﻿using Microsoft.Data.SqlClient;
 using System.Data;
 
-namespace Oidc.OpenIddict.AuthorizationServer.Context
+namespace HDS.AuthorizationServer.Context
 {
     public class DapperContext
     {
-        private readonly IConfiguration _configuration;
+        private readonly IConfiguration _config;
         private readonly string _connectionString;
-        public DapperContext(IConfiguration configuration)
+        public DapperContext(IConfiguration config)
         {
-            _configuration = configuration;
-            _connectionString = "Server=L3\\SQLDEV;Database=OpenIDDictDB;TrustServerCertificate=True;Trusted_Connection=True;MultipleActiveResultSets=true";
+            _config = config;
+            _connectionString = _config["ConnectionStrings:DefaultConnection"];
         }
         public IDbConnection CreateConnection()
             => new SqlConnection(_connectionString);

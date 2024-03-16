@@ -1,4 +1,4 @@
-﻿namespace Oidc.OpenIddict.AuthorizationServer
+﻿namespace HDS.AuthorizationServer
 {
     public class Consts
     {

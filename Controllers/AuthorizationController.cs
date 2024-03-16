@@ -6,10 +6,10 @@ using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
-using Oidc.OpenIddict.AuthorizationServer;
-using Oidc.OpenIddict.AuthorizationServer.Users;
-using Oidc.OpenIddict.AuthorizationServer.Models;
-using Oidc.OpenIddict.AuthorizationServer.Classes;
+using HDS.AuthorizationServer;
+using HDS.AuthorizationServer.Users;
+using HDS.AuthorizationServer.Models;
+using HDS.AuthorizationServer.Classes;
 using OpenIddict.Abstractions;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 using OpenIddict.Server.AspNetCore;
@@ -18,7 +18,7 @@ using System.Net;
 using System.Security.Claims;
 using System.Web;
 
-namespace Oidc.OpenIddict.AuthorizationServer.Controllers
+namespace HDS.AuthorizationServer.Controllers
 {
     [ApiController]
     public class AuthorizationController : Controller
@@ -125,25 +125,6 @@ namespace Oidc.OpenIddict.AuthorizationServer.Controllers
                     RedirectUri = _authService.BuildRedirectUrl(HttpContext.Request, parameters)
                 }, new[] { CookieAuthenticationDefaults.AuthenticationScheme });
             }
-
-            IdentityUser<int>? iusr = null;
-            bool isValid = false;
-            try
-            {
-                
-                //check that email and password are valid
-                iusr = _userManager.FindByEmailAsync("ldew@hendersondatasolutions.com").Result;
-            }
-            catch (Exception ex)
-            {
-                string tmp = ex.Message;
-            }
-            if (iusr == null)
-            {
-                return StatusCode(403);
-            }
-
-            isValid = _userManager.CheckPasswordAsync(iusr, "Heidi23084&").Result;
 
             var consentClaim = result.Principal.GetClaim(Consts.ConsentNaming);
 

@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 
-namespace Oidc.OpenIddict.AuthorizationServer.Controllers
+namespace HDS.AuthorizationServer.Controllers
 {
     public class AccountsController : Controller
     {

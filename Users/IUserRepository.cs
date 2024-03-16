@@ -1,7 +1,7 @@
-﻿using Oidc.OpenIddict.AuthorizationServer.Context;
-using Oidc.OpenIddict.AuthorizationServer.Models;
+﻿using HDS.AuthorizationServer.Context;
+using HDS.AuthorizationServer.Models;
 
-namespace Oidc.OpenIddict.AuthorizationServer.Users
+namespace HDS.AuthorizationServer.Users
 {
     public interface IUserRepository
     {

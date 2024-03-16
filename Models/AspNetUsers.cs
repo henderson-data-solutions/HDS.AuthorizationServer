@@ -1,4 +1,4 @@
-﻿namespace Oidc.OpenIddict.AuthorizationServer.Models
+﻿namespace HDS.AuthorizationServer.Models
 {
     public class AspNetUsers
     {

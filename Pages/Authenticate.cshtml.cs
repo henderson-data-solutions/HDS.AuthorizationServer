@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace Oidc.OpenIddict.AuthorizationServer.Pages
+namespace HDS.AuthorizationServer.Pages
 {
     public class AuthenticateModel : PageModel
     {

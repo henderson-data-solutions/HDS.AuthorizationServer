@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Primitives;
 using OpenIddict.Abstractions;
 
-namespace Oidc.OpenIddict.AuthorizationServer;
+namespace HDS.AuthorizationServer;
 
 public class AuthorizationService
 {

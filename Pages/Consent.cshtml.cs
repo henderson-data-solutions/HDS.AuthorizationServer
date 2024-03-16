@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using OpenIddict.Abstractions;
 using OpenIddict.Server.AspNetCore;
 
-namespace Oidc.OpenIddict.AuthorizationServer.Pages;
+namespace HDS.AuthorizationServer.Pages;
 
 [Authorize]
 public class Consent : PageModel
