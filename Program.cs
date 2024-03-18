@@ -75,14 +75,14 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddCors(options =>
 {
-    Uri UriCors1 = UriTools.BuildUri(builder.Configuration["HDSAuthorizationServer:UseSSL"],
-        builder.Configuration["HDSAuthorizationServer:UriHost"],
-        builder.Configuration["HDSAuthorizationServer:CorsPort1"],
+    Uri UriCors1 = UriTools.BuildUri(builder.Configuration["HDSInvoiceServer:UseSSL"],
+        builder.Configuration["HDSInvoiceServer:UriHost"],
+        builder.Configuration["HDSInvoiceServer:CorsPort1"],
         "");
 
-    Uri UriCors2 = UriTools.BuildUri(builder.Configuration["HDSAuthorizationServer:UseSSL"],
-        builder.Configuration["HDSAuthorizationServer:UriHost"],
-        builder.Configuration["HDSAuthorizationServer:CorsPort2"],
+    Uri UriCors2 = UriTools.BuildUri(builder.Configuration["HDSInvoiceServer:UseSSL"],
+        builder.Configuration["HDSInvoiceServer:UriHost"],
+        builder.Configuration["HDSInvoiceServer:CorsPort2"],
         "");
 
     options.AddDefaultPolicy(policy =>
