@@ -17,6 +17,7 @@ using System.Collections.Immutable;
 using System.Net;
 using System.Security.Claims;
 using System.Web;
+using HDS.AuthorizationServer.Repository;
 
 namespace HDS.AuthorizationServer.Controllers
 {
@@ -72,7 +73,7 @@ namespace HDS.AuthorizationServer.Controllers
             {
                 var claims = new List<Claim>
                 {
-                    new(ClaimTypes.Email, "email"),
+                    new(ClaimTypes.Email, "ldew@hendersondatasolutions.com")
                 };
 
                 var principal = new ClaimsPrincipal(
@@ -159,6 +160,9 @@ namespace HDS.AuthorizationServer.Controllers
             return SignIn(new ClaimsPrincipal(identity), OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
         }
 
+
+
+
         [HttpPost("~/connect/token")]
         public async Task<IActionResult> Exchange()
         {
@@ -167,6 +171,32 @@ namespace HDS.AuthorizationServer.Controllers
 
             if (!request.IsAuthorizationCodeGrantType() && !request.IsRefreshTokenGrantType())
                 throw new InvalidOperationException("The specified grant type is not supported.");
+
+            //confirm the user data is 
+            UserRepository repo = new UserRepository();
+
+            string UserEmail = request.GetParameter("user").ToString();
+            string Password = request.GetParameter("password").ToString();
+            IdentityUser<int> user = await _userManager.FindByEmailAsync(UserEmail);
+            AspNetUser aspnetuser = await repo.GetUserByEmail(UserEmail);
+
+            PasswordHasher<IdentityUser<int>> ph = new PasswordHasher<IdentityUser<int>>();
+
+            PasswordVerificationResult rslt = ph.VerifyHashedPassword(user, aspnetuser.PasswordHash, Password);
+
+            if (rslt != PasswordVerificationResult.Success)
+            {
+                return Forbid(
+                    authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
+                    properties: new AuthenticationProperties(new Dictionary<string, string?>
+                    {
+                        [OpenIddictServerAspNetCoreConstants.Properties.Error] = Errors.InvalidGrant,
+                        [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] =
+                    "Username and password combination is not valid."
+                }));
+            }
+
+            List<CustomClaim> myClaims = await repo.GetClaimsByEmail(UserEmail);
 
             var result =
                 await HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
@@ -195,9 +225,14 @@ namespace HDS.AuthorizationServer.Controllers
                 .SetClaim(Claims.Name, userId)
                 .SetClaims(Claims.Role, new List<string> { "user", "admin" }.ToImmutableArray());
 
-            identity.SetDestinations(c => AuthorizationService.GetDestinations(identity, c));
+            foreach (var claim in myClaims)
+            {
+                identity.AddClaim(new Claim(claim.ClaimType, claim.ClaimValue));
+            }
 
-            return SignIn(new ClaimsPrincipal(identity), OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+            identity.SetDestinations(c => AuthorizationService.GetDestinations(identity, c));
+            ClaimsPrincipal principal = new ClaimsPrincipal(identity);
+            return SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
         }
 
         [Authorize(AuthenticationSchemes = OpenIddictServerAspNetCoreDefaults.AuthenticationScheme)]

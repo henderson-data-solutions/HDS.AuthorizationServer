@@ -4,30 +4,52 @@ using System.Data;
 using HDS.AuthorizationServer.Context;
 using HDS.AuthorizationServer.Models;
 using HDS.AuthorizationServer.Users;
+using HDS.AuthorizationServer.Classes;
 using Dapper;
-    
+
 namespace HDS.AuthorizationServer.Repository
 {
     public class UserRepository : IUserRepository
     {
 
-        private readonly DapperContext _context;
-
-        public UserRepository(DapperContext context) 
+        public UserRepository() 
         {
-            _context = context;
+
         }
 
-        public async Task<IEnumerable<AspNetUsers>> GetUsers()
+        public async Task<AspNetUser> GetUserByEmail(string email)
         {
-            var query = "SELECT * FROM AspNetUsers";
-            using (var connection = _context.CreateConnection())
+            List<AspNetUser> users = new List<AspNetUser>();
+
+            var p = new DynamicParameters();
+            p.Add("@EmailAddress", email);
+
+            DataToolsReturnObject<AspNetUser> obj = await DataTools.ExecuteStoredProcedure<AspNetUser>("GetUserDataByEmail", p);
+
+            if(obj.error == string.Empty)
             {
-                var users = await connection.QueryAsync<AspNetUsers>(query);
-                return users.ToList();
+                users = obj.results;
+                return users.First<AspNetUser>();
             }
+
+            return null;
         }
 
+        public async Task<List<CustomClaim>> GetClaimsByEmail(string email)
+        {
+            List<CustomClaim> claims = new List<CustomClaim>();
+            var p = new DynamicParameters();
+            p.Add("@EmailAddress", email);
 
+            DataToolsReturnObject<CustomClaim> obj = await DataTools.ExecuteStoredProcedure<CustomClaim>("GetClaimsByEmail", p);
+
+            if(obj.error == string.Empty)
+            {
+                claims = obj.results;
+                return claims;
+            }
+
+            return null;
+        }
     }
 }

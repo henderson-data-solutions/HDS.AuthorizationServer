@@ -54,7 +54,13 @@ public class AuthorizationService
     {
         var destinations = new List<string>();
 
-        if (claim.Type is OpenIddictConstants.Claims.Name or OpenIddictConstants.Claims.Email)
+        if (claim.Type is OpenIddictConstants.Claims.Name 
+            or OpenIddictConstants.Claims.Email
+            or OpenIddictConstants.Claims.Address
+            or "System.Admin"
+            or "Invoice.Admin"
+            or "Invoice.Read"
+            or "Invoice.ReadWrite")
         {
             destinations.Add(OpenIddictConstants.Destinations.AccessToken);
 

@@ -1,22 +1,22 @@
 ﻿namespace HDS.AuthorizationServer.Models
 {
-    public class AspNetUsers
+    public class AspNetUser
     {
  
-        int id { get; set; }
-        string UserName { get; set; }
-        string NormalizedUserName { get; set; }
-        string Email { get; set; }
-        string NormalizedEmail { get; set; }
-        bool EmailConfirmed { get; set; }
-        string PasswordHash { get; set; }
-        string SecurityStamp { get; set; }
-        string ConcurrenctyStamp { get; set; }
-        string PhoneNumber { get; set; }
-        bool PhoneNumberConfirmed { get; set; }
-        bool TwoFactorEnabled { get; set; }
-        DateTime LockoutEnd { get; set; }
-        bool LockoutEnabled { get; set; }
-        int AccessFailedCount { get; set; }
+        public int id { get; set; }
+        public string UserName { get; set; }
+        public string NormalizedUserName { get; set; }
+        public string Email { get; set; }
+        public string NormalizedEmail { get; set; }
+        public bool EmailConfirmed { get; set; }
+        public string PasswordHash { get; set; }
+        public string SecurityStamp { get; set; }
+        public string ConcurrenctyStamp { get; set; }
+        public string PhoneNumber { get; set; }
+        public bool PhoneNumberConfirmed { get; set; }
+        public bool TwoFactorEnabled { get; set; }
+        public DateTime LockoutEnd { get; set; }
+        public bool LockoutEnabled { get; set; }
+        public int AccessFailedCount { get; set; }
     }
 }

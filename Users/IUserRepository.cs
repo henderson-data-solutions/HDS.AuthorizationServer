@@ -5,7 +5,7 @@ namespace HDS.AuthorizationServer.Users
 {
     public interface IUserRepository
     {
-        public Task<IEnumerable<AspNetUsers>> GetUsers();
+        public Task<AspNetUser> GetUserByEmail(string email);
 
     }
 }
