@@ -5,7 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using HDS.AuthorizationServer;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 using HDS.AuthorizationServer.Context;
-using HDS.AuthorizationServer.Users;
+using HDS.AuthorizationServer.Interfaces;
 using HDS.AuthorizationServer.Repository;
 using HDS.AuthorizationServer.Classes;
 using NLog;
@@ -55,7 +55,7 @@ builder.Services.AddOpenIddict()
 
 builder.Services.AddTransient<AuthorizationService>();
 builder.Services.AddSingleton<DapperContext>();
-builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IAuthorizationRepository, AuthorizationRepository>();
 
 builder.Services.AddControllers();
 builder.Services.AddRazorPages();
@@ -101,6 +101,7 @@ builder.Services.AddDefaultIdentity<IdentityUser<int>>(options => options.SignIn
 
 builder.Logging.ClearProviders();
 builder.Host.UseNLog();
+builder.Services.AddHttpClient();
 
 var app = builder.Build();
 

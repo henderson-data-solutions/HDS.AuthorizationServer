@@ -3,16 +3,16 @@ using Microsoft.Extensions.Configuration;
 using System.Data;
 using HDS.AuthorizationServer.Context;
 using HDS.AuthorizationServer.Models;
-using HDS.AuthorizationServer.Users;
+using HDS.AuthorizationServer.Interfaces;
 using HDS.AuthorizationServer.Classes;
 using Dapper;
 
 namespace HDS.AuthorizationServer.Repository
 {
-    public class UserRepository : IUserRepository
+    public class AuthorizationRepository : IAuthorizationRepository
     {
 
-        public UserRepository() 
+        public AuthorizationRepository() 
         {
 
         }

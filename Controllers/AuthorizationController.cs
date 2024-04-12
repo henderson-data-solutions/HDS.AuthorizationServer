@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using HDS.AuthorizationServer;
-using HDS.AuthorizationServer.Users;
+using HDS.AuthorizationServer.Interfaces;
 using HDS.AuthorizationServer.Models;
 using HDS.AuthorizationServer.Classes;
 using OpenIddict.Abstractions;
@@ -28,20 +28,20 @@ namespace HDS.AuthorizationServer.Controllers
         private readonly IOpenIddictScopeManager _scopeManager;
         private readonly AuthorizationService _authService;
         private readonly UserManager<IdentityUser<int>> _userManager;
-        private readonly IUserRepository _userRepo;
+        private readonly IAuthorizationRepository _authRepo;
 
         public AuthorizationController(
             IOpenIddictApplicationManager applicationManager,
             IOpenIddictScopeManager scopeManager,
             UserManager<IdentityUser<int>> userManager,
-            IUserRepository userRepo,
+            IAuthorizationRepository userRepo,
             AuthorizationService authService)
         {
             _applicationManager = applicationManager;
             _scopeManager = scopeManager;
             _authService = authService;
             _userManager = userManager;
-            _userRepo = userRepo;
+            _authRepo = userRepo;
         }
 
         [HttpGet("~/connect/authorize")]
@@ -173,12 +173,12 @@ namespace HDS.AuthorizationServer.Controllers
                 throw new InvalidOperationException("The specified grant type is not supported.");
 
             //confirm the user data is 
-            UserRepository repo = new UserRepository();
+            AuthorizationRepository authrepo = new AuthorizationRepository();
 
             string UserEmail = request.GetParameter("user").ToString();
             string Password = request.GetParameter("password").ToString();
             IdentityUser<int> user = await _userManager.FindByEmailAsync(UserEmail);
-            AspNetUser aspnetuser = await repo.GetUserByEmail(UserEmail);
+            AspNetUser aspnetuser = await authrepo.GetUserByEmail(UserEmail);
 
             PasswordHasher<IdentityUser<int>> ph = new PasswordHasher<IdentityUser<int>>();
 
@@ -196,7 +196,9 @@ namespace HDS.AuthorizationServer.Controllers
                 }));
             }
 
-            List<CustomClaim> myClaims = await repo.GetClaimsByEmail(UserEmail);
+
+
+            List<CustomClaim> myClaims = await authrepo.GetClaimsByEmail(UserEmail);
 
             var result =
                 await HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
