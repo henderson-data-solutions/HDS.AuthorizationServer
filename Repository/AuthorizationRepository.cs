@@ -6,15 +6,30 @@ using HDS.AuthorizationServer.Models;
 using HDS.AuthorizationServer.Interfaces;
 using HDS.AuthorizationServer.Classes;
 using Dapper;
+using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 
 namespace HDS.AuthorizationServer.Repository
 {
     public class AuthorizationRepository : IAuthorizationRepository
     {
+        private readonly ILogger _logger;
 
-        public AuthorizationRepository() 
+        public AuthorizationRepository(ILogger<AuthorizationRepository> logger) 
         {
+            _logger = logger;
+        }
 
+        public async Task<TwoFactorResults> Generate2FA(int userid)
+        {
+            var p = new DynamicParameters();
+            p.Add("@UserID", userid);
+            
+            DataToolsReturnObject<Guid> obj = await DataTools.ExecuteStoredProcedure<Guid>("Generate2FA", p);
+
+            TwoFactorResults rslt = new TwoFactorResults();
+            rslt.Lookup = rslt.Lookup;
+            rslt.Code = rslt.Code;
+            return rslt;
         }
 
         public async Task<AspNetUser> GetUserByEmail(string email)

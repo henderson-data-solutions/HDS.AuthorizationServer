@@ -1,13 +1,15 @@
+using HDS.AuthorizationServer;
+using HDS.AuthorizationServer.Classes;
+using HDS.AuthorizationServer.Context;
+using HDS.AuthorizationServer.Interfaces;
+using HDS.AuthorizationServer.Models;
+using HDS.AuthorizationServer.Repository;
+using HDS.AuthorizationServer.SqlConfiguration;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using HDS.AuthorizationServer;
 using static OpenIddict.Abstractions.OpenIddictConstants;
-using HDS.AuthorizationServer.Context;
-using HDS.AuthorizationServer.Interfaces;
-using HDS.AuthorizationServer.Repository;
-using HDS.AuthorizationServer.Classes;
 using NLog;
 using NLog.Web;
 
@@ -15,13 +17,22 @@ var logger = NLog.LogManager.Setup().LoadConfigurationFromAppSettings().GetCurre
 
 var builder = WebApplication.CreateBuilder(args);
 
-string? ConnectString = builder.Configuration["ConnectionStrings:DefaultConnection"];
+builder.Configuration.AddSqlDatabase(config =>
+{
+    //We can get the connection string from previously added ConfigurationProviders to use in setting this up
+    config.ConnectionString = builder.Configuration["ConnectionStrings:DefaultConnection"];
+    config.RefreshInterval = TimeSpan.FromMinutes(1);
+});
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
-    options.UseSqlServer(ConnectString);
+    options.UseSqlServer(builder.Configuration["ConnectionStrings:InvoiceRead"]);
     options.UseOpenIddict();
 });
+
+//Settings from all sources will be merged together. Since the database provider is added after the default
+//providers it can be used to override settings from those other providers.
+builder.Services.Configure<ConfigurationOption>(builder.Configuration.GetSection("AppSettings"));
 
 builder.Services.AddOpenIddict()
     .AddCore(options =>

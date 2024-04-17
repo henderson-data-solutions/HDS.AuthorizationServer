@@ -29,19 +29,28 @@ namespace HDS.AuthorizationServer.Controllers
         private readonly AuthorizationService _authService;
         private readonly UserManager<IdentityUser<int>> _userManager;
         private readonly IAuthorizationRepository _authRepo;
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly ILogger _logger;
+        private readonly IConfiguration _config;
 
         public AuthorizationController(
             IOpenIddictApplicationManager applicationManager,
             IOpenIddictScopeManager scopeManager,
             UserManager<IdentityUser<int>> userManager,
-            IAuthorizationRepository userRepo,
-            AuthorizationService authService)
+            IAuthorizationRepository authRepo,
+            AuthorizationService authService,
+            IHttpClientFactory httpClientFactory,
+            ILogger<AuthorizationController> logger,
+            IConfiguration config)
         {
             _applicationManager = applicationManager;
             _scopeManager = scopeManager;
             _authService = authService;
             _userManager = userManager;
-            _authRepo = userRepo;
+            _authRepo = authRepo;
+            _httpClientFactory = httpClientFactory;
+            _logger = logger;
+            _config = config;
         }
 
         [HttpGet("~/connect/authorize")]
@@ -172,13 +181,10 @@ namespace HDS.AuthorizationServer.Controllers
             if (!request.IsAuthorizationCodeGrantType() && !request.IsRefreshTokenGrantType())
                 throw new InvalidOperationException("The specified grant type is not supported.");
 
-            //confirm the user data is 
-            AuthorizationRepository authrepo = new AuthorizationRepository();
-
             string UserEmail = request.GetParameter("user").ToString();
             string Password = request.GetParameter("password").ToString();
             IdentityUser<int> user = await _userManager.FindByEmailAsync(UserEmail);
-            AspNetUser aspnetuser = await authrepo.GetUserByEmail(UserEmail);
+            AspNetUser aspnetuser = await _authRepo.GetUserByEmail(UserEmail);
 
             PasswordHasher<IdentityUser<int>> ph = new PasswordHasher<IdentityUser<int>>();
 
@@ -193,12 +199,33 @@ namespace HDS.AuthorizationServer.Controllers
                         [OpenIddictServerAspNetCoreConstants.Properties.Error] = Errors.InvalidGrant,
                         [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] =
                     "Username and password combination is not valid."
-                }));
+                    }));
             }
 
+            //add 2FA check here
+            if (string.IsNullOrEmpty(_config["Authentication:2FA_URL"]))
+            {
+                return Forbid(
+                    authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
+                    properties: new AuthenticationProperties(new Dictionary<string, string?>
+                    {
+                        [OpenIddictServerAspNetCoreConstants.Properties.Error] = Errors.InvalidGrant,
+                        [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] =
+                        "Error retrieving Authentication 2FA url."
+                    }));
+            };
 
+            TwoFactorResults tfr = await _authRepo.Generate2FA(user.Id);           
+            string url = string.Format(_config["Authentication:2FA_URL"], "user1", "user_pass", user.PhoneNumber, "");
+            HttpClient client = _httpClientFactory.CreateClient();
+            HttpResponseMessage msg = await client.GetAsync(url);
 
-            List<CustomClaim> myClaims = await authrepo.GetClaimsByEmail(UserEmail);
+            if(!msg.IsSuccessStatusCode)
+            {
+                _logger.LogError($"Error while trying to send 2FA code to UserID: {user.Id}");
+            }
+
+            List<CustomClaim> myClaims = await _authRepo.GetClaimsByEmail(UserEmail);
 
             var result =
                 await HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);

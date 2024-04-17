@@ -6,6 +6,7 @@ namespace HDS.AuthorizationServer.Interfaces
     public interface IAuthorizationRepository
     {
         public Task<AspNetUser> GetUserByEmail(string email);
-
+        public Task<TwoFactorResults> Generate2FA(int userid);
+        Task<List<CustomClaim>> GetClaimsByEmail(string email);
     }
 }
