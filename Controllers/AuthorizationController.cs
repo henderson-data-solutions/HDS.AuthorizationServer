@@ -215,10 +215,11 @@ namespace HDS.AuthorizationServer.Controllers
                     }));
             };
 
-            TwoFactorResults tfr = await _authRepo.Generate2FA(user.Id);           
-            string url = string.Format(_config["Authentication:2FA_URL"], "user1", "user_pass", user.PhoneNumber, "");
+            TwoFactorResults tfr = await _authRepo.Generate2FA(user.Id);
+            string msg2FA = string.Format(_config["Authentication:2FA_Message"], tfr.Code);
+            string url2FA = string.Format(_config["Authentication:2FA_URL"], "user1", "user_pass", user.PhoneNumber, msg2FA);
             HttpClient client = _httpClientFactory.CreateClient();
-            HttpResponseMessage msg = await client.GetAsync(url);
+            HttpResponseMessage msg = await client.GetAsync(url2FA);
 
             if(!msg.IsSuccessStatusCode)
             {

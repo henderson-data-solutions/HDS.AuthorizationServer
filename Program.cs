@@ -26,7 +26,7 @@ builder.Configuration.AddSqlDatabase(config =>
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
-    options.UseSqlServer(builder.Configuration["ConnectionStrings:InvoiceRead"]);
+    options.UseSqlServer(builder.Configuration["ConnectionStrings:DefaultConnection"]);
     options.UseOpenIddict();
 });
 
