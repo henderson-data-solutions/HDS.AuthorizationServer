@@ -17,6 +17,8 @@ var logger = NLog.LogManager.Setup().LoadConfigurationFromAppSettings().GetCurre
 
 var builder = WebApplication.CreateBuilder(args);
 
+logger.Info("1 connectionstring: " + builder.Configuration["ConnectionStrings:DefaultConnection"]);
+
 builder.Configuration.AddSqlDatabase(config =>
 {
     //We can get the connection string from previously added ConfigurationProviders to use in setting this up
@@ -24,15 +26,22 @@ builder.Configuration.AddSqlDatabase(config =>
     config.RefreshInterval = TimeSpan.FromMinutes(1);
 });
 
+logger.Info("2 connectionstring: " + builder.Configuration["ConnectionStrings:DefaultConnection"]);
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration["ConnectionStrings:DefaultConnection"]);
     options.UseOpenIddict();
 });
 
+logger.Info("buider.Services/Configure");
+
 //Settings from all sources will be merged together. Since the database provider is added after the default
 //providers it can be used to override settings from those other providers.
 builder.Services.Configure<ConfigurationOption>(builder.Configuration.GetSection("AppSettings"));
+
+logger.Info("AddOpenIddict()");
+
 
 builder.Services.AddOpenIddict()
     .AddCore(options =>

@@ -5,6 +5,8 @@ using Dapper;
 using HDS.AuthorizationServer.Models;
 using System.Data;
 using System.Reflection.PortableExecutable;
+using NLog;
+using NLog.Web;
 
 namespace HDS.AuthorizationServer.SqlConfiguration
 {
@@ -35,9 +37,13 @@ namespace HDS.AuthorizationServer.SqlConfiguration
 
         private void ReadDatabaseSettings(bool isReload)
         {
+            var logger = NLog.LogManager.Setup().LoadConfigurationFromAppSettings().GetCurrentClassLogger();
+
             string procname = "GetConfigurationOptions";
             var settings = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
             List<ConfigurationOption> options = new List<ConfigurationOption>();
+
+            logger.Info("Connection string: " + Source.ConnectionString);
             try
             {
                 using (IDbConnection db = new SqlConnection(Source.ConnectionString))
