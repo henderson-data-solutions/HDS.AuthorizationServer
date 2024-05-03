@@ -24,12 +24,11 @@ namespace HDS.AuthorizationServer.Repository
             var p = new DynamicParameters();
             p.Add("@UserID", userid);
             
-            DataToolsReturnObject<Guid> obj = await DataTools.ExecuteStoredProcedure<Guid>("Generate2FA", p);
+            DataToolsReturnObject<TwoFactorResults> obj = await DataTools.ExecuteStoredProcedure<TwoFactorResults>("Generate2FA", p);
 
-            TwoFactorResults rslt = new TwoFactorResults();
-            rslt.Lookup = rslt.Lookup;
-            rslt.Code = rslt.Code;
-            return rslt;
+            TwoFactorResults rtnValue = obj.results.First<TwoFactorResults>();
+
+            return rtnValue;
         }
 
         public async Task<AspNetUser> GetUserByEmail(string email)

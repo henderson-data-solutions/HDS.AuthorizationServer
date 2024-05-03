@@ -175,55 +175,92 @@ namespace HDS.AuthorizationServer.Controllers
         [HttpPost("~/connect/token")]
         public async Task<IActionResult> Exchange()
         {
-            var request = HttpContext.GetOpenIddictServerRequest() ??
-                          throw new InvalidOperationException("The OpenID Connect request cannot be retrieved.");
+            IdentityUser<int>? user = new IdentityUser<int>();
+            AspNetUser aspnetuser = new AspNetUser();
+            string UserEmail = string.Empty;
+            string Password = string.Empty;
 
-            if (!request.IsAuthorizationCodeGrantType() && !request.IsRefreshTokenGrantType())
-                throw new InvalidOperationException("The specified grant type is not supported.");
-
-            string UserEmail = request.GetParameter("user").ToString();
-            string Password = request.GetParameter("password").ToString();
-            IdentityUser<int> user = await _userManager.FindByEmailAsync(UserEmail);
-            AspNetUser aspnetuser = await _authRepo.GetUserByEmail(UserEmail);
-
-            PasswordHasher<IdentityUser<int>> ph = new PasswordHasher<IdentityUser<int>>();
-
-            PasswordVerificationResult rslt = ph.VerifyHashedPassword(user, aspnetuser.PasswordHash, Password);
-
-            if (rslt != PasswordVerificationResult.Success)
+            try
             {
+
+                var request = HttpContext.GetOpenIddictServerRequest() ??
+                              throw new InvalidOperationException("The OpenID Connect request cannot be retrieved.");
+
+                if (!request.IsAuthorizationCodeGrantType() && !request.IsRefreshTokenGrantType())
+                    throw new InvalidOperationException("The specified grant type is not supported.");
+
+                UserEmail = request.GetParameter("user").ToString();
+                Password = request.GetParameter("password").ToString();
+                user = await _userManager.FindByEmailAsync(UserEmail);
+                aspnetuser = await _authRepo.GetUserByEmail(UserEmail);
+
+                PasswordHasher<IdentityUser<int>> ph = new PasswordHasher<IdentityUser<int>>();
+
+                PasswordVerificationResult rslt = ph.VerifyHashedPassword(user, aspnetuser.PasswordHash, Password);
+
+                if (rslt != PasswordVerificationResult.Success)
+                {
+                    return Forbid(
+                        authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
+                        properties: new AuthenticationProperties(new Dictionary<string, string?>
+                        {
+                            [OpenIddictServerAspNetCoreConstants.Properties.Error] = Errors.InvalidGrant,
+                            [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] =
+                        "Username and password combination is not valid."
+                        }));
+                }
+            }
+            catch(Exception ex)
+            {
+                _logger.LogError("Exception encountered while validating password \n{0}\n{1}", ex.Message, ex.StackTrace);
                 return Forbid(
                     authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
                     properties: new AuthenticationProperties(new Dictionary<string, string?>
                     {
                         [OpenIddictServerAspNetCoreConstants.Properties.Error] = Errors.InvalidGrant,
                         [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] =
-                    "Username and password combination is not valid."
+                        "Error attempting to validate password."
                     }));
             }
 
-            //add 2FA check here
-            if (string.IsNullOrEmpty(_config["Authentication:2FA_URL"]))
+            try
             {
+                //add 2FA check here
+                if (string.IsNullOrEmpty(_config["Authentication:2FA_URL"]))
+                {
+                    return Forbid(
+                        authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
+                        properties: new AuthenticationProperties(new Dictionary<string, string?>
+                        {
+                            [OpenIddictServerAspNetCoreConstants.Properties.Error] = Errors.InvalidGrant,
+                            [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] =
+                            "Error retrieving Authentication 2FA url."
+                        }));
+                };
+
+                TwoFactorResults tfr = await _authRepo.Generate2FA(user.Id);
+                string msg2FA = string.Format(_config["Authentication:2FA_Message"], tfr.Code);
+                string url2FA = string.Format(_config["Authentication:2FA_URL"], "user1", "user_pass", user.PhoneNumber, msg2FA);
+                HttpClient client = _httpClientFactory.CreateClient();
+                HttpResponseMessage msg = await client.GetAsync(url2FA);
+
+                if (!msg.IsSuccessStatusCode)
+                {
+                    _logger.LogError($"Error while trying to send 2FA code to UserID: {user.Id}");
+                }
+            }
+            catch(Exception ex)
+            {
+                _logger.LogError("Exception encountered during Two Factor Authentication. \n{0}\n{1}", ex.Message, ex.StackTrace);
                 return Forbid(
                     authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
                     properties: new AuthenticationProperties(new Dictionary<string, string?>
                     {
                         [OpenIddictServerAspNetCoreConstants.Properties.Error] = Errors.InvalidGrant,
                         [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] =
-                        "Error retrieving Authentication 2FA url."
+                        "Error during Two Factor Authentication."
                     }));
-            };
 
-            TwoFactorResults tfr = await _authRepo.Generate2FA(user.Id);
-            string msg2FA = string.Format(_config["Authentication:2FA_Message"], tfr.Code);
-            string url2FA = string.Format(_config["Authentication:2FA_URL"], "user1", "user_pass", user.PhoneNumber, msg2FA);
-            HttpClient client = _httpClientFactory.CreateClient();
-            HttpResponseMessage msg = await client.GetAsync(url2FA);
-
-            if(!msg.IsSuccessStatusCode)
-            {
-                _logger.LogError($"Error while trying to send 2FA code to UserID: {user.Id}");
             }
 
             List<CustomClaim> myClaims = await _authRepo.GetClaimsByEmail(UserEmail);
