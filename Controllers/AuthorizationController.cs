@@ -223,45 +223,45 @@ namespace HDS.AuthorizationServer.Controllers
                     }));
             }
 
-            try
-            {
-                //add 2FA check here
-                if (string.IsNullOrEmpty(_config["Authentication:2FA_URL"]))
-                {
-                    return Forbid(
-                        authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
-                        properties: new AuthenticationProperties(new Dictionary<string, string?>
-                        {
-                            [OpenIddictServerAspNetCoreConstants.Properties.Error] = Errors.InvalidGrant,
-                            [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] =
-                            "Error retrieving Authentication 2FA url."
-                        }));
-                };
+            //try
+            //{
+            //    //add 2FA check here
+            //    if (string.IsNullOrEmpty(_config["Authentication:2FA_URL"]))
+            //    {
+            //        return Forbid(
+            //            authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
+            //            properties: new AuthenticationProperties(new Dictionary<string, string?>
+            //            {
+            //                [OpenIddictServerAspNetCoreConstants.Properties.Error] = Errors.InvalidGrant,
+            //                [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] =
+            //                "Error retrieving Authentication 2FA url."
+            //            }));
+            //    };
 
-                TwoFactorResults tfr = await _authRepo.Generate2FA(user.Id);
-                string msg2FA = string.Format(_config["Authentication:2FA_Message"], tfr.Code);
-                string url2FA = string.Format(_config["Authentication:2FA_URL"], "user1", "user_pass", user.PhoneNumber, msg2FA);
-                HttpClient client = _httpClientFactory.CreateClient();
-                HttpResponseMessage msg = await client.GetAsync(url2FA);
+            //    TwoFactorResults tfr = await _authRepo.Generate2FA(user.Id);
+            //    string msg2FA = string.Format(_config["Authentication:2FA_Message"], tfr.Code);
+            //    string url2FA = string.Format(_config["Authentication:2FA_URL"], "user1", "user_pass", user.PhoneNumber, msg2FA);
+            //    HttpClient client = _httpClientFactory.CreateClient();
+            //    HttpResponseMessage msg = await client.GetAsync(url2FA);
 
-                if (!msg.IsSuccessStatusCode)
-                {
-                    _logger.LogError($"Error while trying to send 2FA code to UserID: {user.Id}");
-                }
-            }
-            catch(Exception ex)
-            {
-                _logger.LogError("Exception encountered during Two Factor Authentication. \n{0}\n{1}", ex.Message, ex.StackTrace);
-                return Forbid(
-                    authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
-                    properties: new AuthenticationProperties(new Dictionary<string, string?>
-                    {
-                        [OpenIddictServerAspNetCoreConstants.Properties.Error] = Errors.InvalidGrant,
-                        [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] =
-                        "Error during Two Factor Authentication."
-                    }));
+            //    if (!msg.IsSuccessStatusCode)
+            //    {
+            //        _logger.LogError($"Error while trying to send 2FA code to UserID: {user.Id}");
+            //    }
+            //}
+            //catch(Exception ex)
+            //{
+            //    _logger.LogError("Exception encountered during Two Factor Authentication. \n{0}\n{1}", ex.Message, ex.StackTrace);
+            //    return Forbid(
+            //        authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
+            //        properties: new AuthenticationProperties(new Dictionary<string, string?>
+            //        {
+            //            [OpenIddictServerAspNetCoreConstants.Properties.Error] = Errors.InvalidGrant,
+            //            [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] =
+            //            "Error during Two Factor Authentication."
+            //        }));
 
-            }
+            //}
 
             List<CustomClaim> myClaims = await _authRepo.GetClaimsByEmail(UserEmail);
 
