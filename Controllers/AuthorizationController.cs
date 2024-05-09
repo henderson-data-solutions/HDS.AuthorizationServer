@@ -18,6 +18,7 @@ using System.Net;
 using System.Security.Claims;
 using System.Web;
 using HDS.AuthorizationServer.Repository;
+using System.Text.RegularExpressions;
 
 namespace HDS.AuthorizationServer.Controllers
 {
@@ -170,12 +171,14 @@ namespace HDS.AuthorizationServer.Controllers
 
 
         [HttpPost("~/connect/token")]
-        public async Task<IActionResult> Exchange()
+        public async Task<JsonResult> Exchange()
         {
             IdentityUser<int>? user = new IdentityUser<int>();
             AspNetUser aspnetuser = new AspNetUser();
+            TwoFactorResults tfr = new TwoFactorResults();
             string UserEmail = string.Empty;
             string Password = string.Empty;
+            HDSAuthorizationResult HDSAuthResult = new HDSAuthorizationResult();
 
             try
             {
@@ -193,73 +196,86 @@ namespace HDS.AuthorizationServer.Controllers
 
                 PasswordHasher<IdentityUser<int>> ph = new PasswordHasher<IdentityUser<int>>();
 
-                PasswordVerificationResult rslt = ph.VerifyHashedPassword(user, aspnetuser.PasswordHash, Password);
+                PasswordVerificationResult PVResult = ph.VerifyHashedPassword(user, aspnetuser.PasswordHash, Password);
 
-                if (rslt != PasswordVerificationResult.Success)
+                if (PVResult != PasswordVerificationResult.Success)
                 {
-                    return Forbid(
-                        authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
-                        properties: new AuthenticationProperties(new Dictionary<string, string?>
-                        {
-                            [OpenIddictServerAspNetCoreConstants.Properties.Error] = Errors.InvalidGrant,
-                            [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] =
-                        "Username and password combination is not valid."
-                        }));
+                    HDSAuthResult.status = 403; //forbidden
+                    HDSAuthResult.message = "Username and password combination is not valid.";
+                    return new JsonResult(HDSAuthResult);
                 }
             }
             catch(Exception ex)
             {
                 _logger.LogError("Exception encountered while validating password \n{0}\n{1}", ex.Message, ex.StackTrace);
-                return Forbid(
-                    authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
-                    properties: new AuthenticationProperties(new Dictionary<string, string?>
-                    {
-                        [OpenIddictServerAspNetCoreConstants.Properties.Error] = Errors.InvalidGrant,
-                        [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] =
-                        "Error attempting to validate password."
-                    }));
+                HDSAuthResult.status = 403; //forbidden
+                HDSAuthResult.message = "Error attempting to validate password.";
+                return new JsonResult(HDSAuthResult);
             }
 
-            //try
-            //{
-            //    //add 2FA check here
-            //    if (string.IsNullOrEmpty(_config["Authentication:2FA_URL"]))
-            //    {
-            //        return Forbid(
-            //            authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
-            //            properties: new AuthenticationProperties(new Dictionary<string, string?>
-            //            {
-            //                [OpenIddictServerAspNetCoreConstants.Properties.Error] = Errors.InvalidGrant,
-            //                [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] =
-            //                "Error retrieving Authentication 2FA url."
-            //            }));
-            //    };
+            if (user.TwoFactorEnabled)
+            {
+                try
+                {
+                    //add 2FA check here
+                    if (string.IsNullOrEmpty(_config["Authentication:2FA_URL"]))
+                    {
+                        _logger.LogError("Error retrieving Authentication 2FA url.");
+                        HDSAuthResult.status = 403; //forbidden
+                        HDSAuthResult.message = "Error retrieving Authentication 2FA url.";
+                        return new JsonResult(HDSAuthResult);
+                    };
 
-            //    TwoFactorResults tfr = await _authRepo.Generate2FA(user.Id);
-            //    string msg2FA = string.Format(_config["Authentication:2FA_Message"], tfr.Code);
-            //    string url2FA = string.Format(_config["Authentication:2FA_URL"], "user1", "user_pass", user.PhoneNumber, msg2FA);
-            //    HttpClient client = _httpClientFactory.CreateClient();
-            //    HttpResponseMessage msg = await client.GetAsync(url2FA);
+                    string phone = Regex.Replace(user.PhoneNumber, "[^0-9.]", "");
+                    tfr = await _authRepo.Generate2FA(user.Id);
+                    string msg2FA = string.Format(_config["Authentication:2FA_Message"], tfr.Code);
+                    string url2FA = string.Format(_config["Authentication:2FA_URL"], "user1", "user_pass", phone, msg2FA);
+                    HttpClient client = _httpClientFactory.CreateClient();
+                    HttpResponseMessage msg = await client.GetAsync(url2FA);
 
-            //    if (!msg.IsSuccessStatusCode)
-            //    {
-            //        _logger.LogError($"Error while trying to send 2FA code to UserID: {user.Id}");
-            //    }
-            //}
-            //catch(Exception ex)
-            //{
-            //    _logger.LogError("Exception encountered during Two Factor Authentication. \n{0}\n{1}", ex.Message, ex.StackTrace);
-            //    return Forbid(
-            //        authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
-            //        properties: new AuthenticationProperties(new Dictionary<string, string?>
-            //        {
-            //            [OpenIddictServerAspNetCoreConstants.Properties.Error] = Errors.InvalidGrant,
-            //            [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] =
-            //            "Error during Two Factor Authentication."
-            //        }));
+                    if (!msg.IsSuccessStatusCode)
+                    {
+                        throw new Exception($"Error while trying to send 2FA code to UserID: {user.Id}");
+                    }
 
-            //}
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError("Exception encountered during Two Factor Authentication. \n{0}\n{1}", ex.Message, ex.StackTrace);
 
+                    HDSAuthResult.status = 403; //forbidden
+                    HDSAuthResult.message = String.Format("Exception encountered during Two Factor Authentication. \n{0}", ex.Message);
+                    return new JsonResult(HDSAuthResult);
+                }
+            }
+
+            HDSAuthResult.status = 200; //success
+            HDSAuthResult.message = "Success";
+            HDSAuthResult.twofactorlookup = tfr.Lookup;
+            return new JsonResult(HDSAuthResult);
+
+            //The Two Factor Code has been sent
+            //Now we have to wait for the user to get the code, enter it and resubmit it
+
+        }
+
+
+        [HttpPost("~/connect/finalize")]
+        public async Task<IActionResult> Finalize()
+        {
+            IdentityUser<int>? user = new IdentityUser<int>();
+            AspNetUser aspnetuser = new AspNetUser();
+            TwoFactorResults tfr = new TwoFactorResults();
+            string UserEmail = string.Empty;
+            string Password = string.Empty;
+            HDSAuthorizationResult HDSAuthResult = new HDSAuthorizationResult();
+
+            var request = HttpContext.Request;
+
+            //UserEmail = request.GetParameter("password").ToString();
+            //Password = request.GetParameter("password").ToString();
+            user = await _userManager.FindByEmailAsync(UserEmail);
+            aspnetuser = await _authRepo.GetUserByEmail(UserEmail);
             List<CustomClaim> myClaims = await _authRepo.GetClaimsByEmail(UserEmail);
 
             var result =
