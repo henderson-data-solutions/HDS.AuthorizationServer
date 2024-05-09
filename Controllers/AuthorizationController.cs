@@ -80,10 +80,7 @@ namespace HDS.AuthorizationServer.Controllers
 
             if (!_authService.IsAuthenticated(result, request))
             {
-                var claims = new List<Claim>
-                {
-                    new(ClaimTypes.Email, "ldew@hendersondatasolutions.com")
-                };
+                var claims = new List<Claim>();
 
                 var principal = new ClaimsPrincipal(
                     new List<ClaimsIdentity>
