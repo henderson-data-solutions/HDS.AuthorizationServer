@@ -31,13 +31,13 @@ namespace HDS.AuthorizationServer.Repository
             return rtnValue;
         }
 
-        public async Task<int> Check2FA(string code, Guid lookup)
+        public async Task<AspNetUser> Check2FA(string code, Guid lookup)
         {
             var p = new DynamicParameters();
             p.Add("@Code", code);
             p.Add("@Lookup", lookup);
-            DataToolsReturnObject<int> obj = await DataTools.ExecuteStoredProcedure<int>("dbo.Check2FA", p);
-            return obj.results.First<int>();
+            DataToolsReturnObject<AspNetUser> obj = await DataTools.ExecuteStoredProcedure<AspNetUser>("dbo.Check2FA", p);
+            return obj.results.First<AspNetUser>();
         }
 
         public async Task<AspNetUser> GetUserByEmail(string email)

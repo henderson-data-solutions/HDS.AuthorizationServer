@@ -19,6 +19,8 @@ using System.Security.Claims;
 using System.Web;
 using HDS.AuthorizationServer.Repository;
 using System.Text.RegularExpressions;
+using OpenIddict.Validation.AspNetCore;
+using System.Linq;
 
 namespace HDS.AuthorizationServer.Controllers
 {
@@ -53,6 +55,13 @@ namespace HDS.AuthorizationServer.Controllers
             _logger = logger;
             _config = config;
         }
+
+        //[HttpGet("~/connect/TwoFactorVerify")]
+        //public async Task<IActionResult> TwoFactoryVerify()
+        //{
+
+        //}
+
 
         [HttpGet("~/connect/authorize")]
         public async Task<IActionResult> Authorize()
@@ -171,7 +180,7 @@ namespace HDS.AuthorizationServer.Controllers
 
 
         [HttpPost("~/connect/token")]
-        public async Task<JsonResult> Exchange()
+        public async Task<IActionResult> Exchange()
         {
             IdentityUser<int>? user = new IdentityUser<int>();
             AspNetUser aspnetuser = new AspNetUser();
@@ -205,63 +214,25 @@ namespace HDS.AuthorizationServer.Controllers
                     return new JsonResult(HDSAuthResult);
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _logger.LogError("Exception encountered while validating password \n{0}\n{1}", ex.Message, ex.StackTrace);
-                HDSAuthResult.status = 403; //forbidden
-                HDSAuthResult.message = "Error attempting to validate password.";
-                return new JsonResult(HDSAuthResult);
+
+                return Forbid(
+                    authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
+                    properties: new AuthenticationProperties(new Dictionary<string, string?>
+                    {
+                        [OpenIddictServerAspNetCoreConstants.Properties.Error] = Errors.InvalidGrant,
+                        [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] =
+                        "Error attempting to validate password."
+                    }));
             }
 
-            if (user.TwoFactorEnabled)
-            {
-                try
-                {
-                    //add 2FA check here
-                    if (string.IsNullOrEmpty(_config["Authentication:2FA_URL"]))
-                    {
-                        _logger.LogError("Error retrieving Authentication 2FA url.");
-                        HDSAuthResult.status = 403; //forbidden
-                        HDSAuthResult.message = "Error retrieving Authentication 2FA url.";
-                        return new JsonResult(HDSAuthResult);
-                    };
-
-                    string phone = Regex.Replace(user.PhoneNumber, "[^0-9.]", "");
-                    tfr = await _authRepo.Generate2FA(user.Id);
-                    string msg2FA = string.Format(_config["Authentication:2FA_Message"], tfr.Code);
-                    string url2FA = string.Format(_config["Authentication:2FA_URL"], "user1", "user_pass", phone, msg2FA);
-                    HttpClient client = _httpClientFactory.CreateClient();
-                    HttpResponseMessage msg = await client.GetAsync(url2FA);
-
-                    if (!msg.IsSuccessStatusCode)
-                    {
-                        throw new Exception($"Error while trying to send 2FA code to UserID: {user.Id}");
-                    }
-
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError("Exception encountered during Two Factor Authentication. \n{0}\n{1}", ex.Message, ex.StackTrace);
-
-                    HDSAuthResult.status = 403; //forbidden
-                    HDSAuthResult.message = String.Format("Exception encountered during Two Factor Authentication. \n{0}", ex.Message);
-                    return new JsonResult(HDSAuthResult);
-                }
-            }
-
-            HDSAuthResult.status = 200; //success
-            HDSAuthResult.message = "Success";
-            HDSAuthResult.twofactorlookup = tfr.Lookup;
-            return new JsonResult(HDSAuthResult);
-
-            //The Two Factor Code has been sent
-            //Now we have to wait for the user to get the code, enter it and resubmit it
-
+            ClaimsPrincipal principal = await GetClaims(user.Id);
+            return SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
         }
 
-
-        [HttpPost("~/connect/finalize")]
-        public async Task<IActionResult> Finalize()
+        private async Task<ClaimsPrincipal> GetClaims(int UserID)
         {
             IdentityUser<int>? user = new IdentityUser<int>();
             AspNetUser aspnetuser = new AspNetUser();
@@ -272,11 +243,9 @@ namespace HDS.AuthorizationServer.Controllers
 
             var request = HttpContext.Request;
 
-            //UserEmail = request.GetParameter("password").ToString();
-            //Password = request.GetParameter("password").ToString();
-            user = await _userManager.FindByEmailAsync(UserEmail);
-            aspnetuser = await _authRepo.GetUserByEmail(UserEmail);
-            List<CustomClaim> myClaims = await _authRepo.GetClaimsByEmail(UserEmail);
+            user = await _userManager.FindByIdAsync(UserID.ToString());
+            aspnetuser = await _authRepo.GetUserByEmail(user.Email);
+            List<CustomClaim> myClaims = await _authRepo.GetClaimsByEmail(user.Email);
 
             var result =
                 await HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
@@ -285,14 +254,7 @@ namespace HDS.AuthorizationServer.Controllers
 
             if (string.IsNullOrEmpty(userId))
             {
-                return Forbid(
-                    authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
-                    properties: new AuthenticationProperties(new Dictionary<string, string?>
-                    {
-                        [OpenIddictServerAspNetCoreConstants.Properties.Error] = Errors.InvalidGrant,
-                        [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] =
-                            "Cannot find user from the token."
-                    }));
+                return null;
             }
 
             var identity = new ClaimsIdentity(result.Principal.Claims,
@@ -312,8 +274,10 @@ namespace HDS.AuthorizationServer.Controllers
 
             identity.SetDestinations(c => AuthorizationService.GetDestinations(identity, c));
             ClaimsPrincipal principal = new ClaimsPrincipal(identity);
-            return SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+
+            return principal;
         }
+
 
         [Authorize(AuthenticationSchemes = OpenIddictServerAspNetCoreDefaults.AuthenticationScheme)]
         [HttpGet("~/connect/userinfo"), HttpPost("~/connect/userinfo")]

@@ -8,8 +8,8 @@
         public string code { get; set; }
         public string iss { get; set; }
         public string state { get; set; }
-        public Guid twofactorlookup {  get; set; }  
-
+        public bool twofactorenabled { get; set; }
+        public Guid twofactorlookup { get; set; }
 
         public HDSAuthorizationResult()
         {
@@ -19,6 +19,7 @@
             code = string.Empty;
             iss = string.Empty;
             state = string.Empty;
+            twofactorenabled = false;
         }
     }
 }
