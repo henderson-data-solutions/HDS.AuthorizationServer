@@ -1,4 +1,4 @@
-﻿namespace HDS.AuthorizationServer.Classes
+﻿namespace Oidc.OpenIddict.ResourceServer1.Classes
 {
     public class HDSAuthorizationResult
     {
