@@ -1,27 +1,27 @@
-﻿using Microsoft.AspNetCore;
+﻿using HDS.AuthorizationServer.Classes;
+using HDS.AuthorizationServer.Interfaces;
+using HDS.AuthorizationServer.Models;
+using HDS.AuthorizationServer.Repository;
+using HDS.AuthorizationServer;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore;
 using Microsoft.IdentityModel.Tokens;
-using HDS.AuthorizationServer;
-using HDS.AuthorizationServer.Interfaces;
-using HDS.AuthorizationServer.Models;
-using HDS.AuthorizationServer.Classes;
 using OpenIddict.Abstractions;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 using OpenIddict.Server.AspNetCore;
+using OpenIddict.Validation.AspNetCore;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Net;
 using System.Security.Claims;
-using System.Web;
-using HDS.AuthorizationServer.Repository;
 using System.Text.RegularExpressions;
-using OpenIddict.Validation.AspNetCore;
-using System.Linq;
- 
+using System.Web;
+
 namespace HDS.AuthorizationServer.Controllers
 {
     [ApiController]

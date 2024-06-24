@@ -2,6 +2,7 @@
 using HDS.AuthorizationServer.Classes;
 using OpenIddict.Abstractions;
 using static OpenIddict.Abstractions.OpenIddictConstants;
+using static System.Net.WebRequestMethods;
 
 namespace HDS.AuthorizationServer
 {
@@ -91,7 +92,11 @@ namespace HDS.AuthorizationServer
                 {
                     new Uri(SwaggerRedirectUri.ToString()),
                     new Uri(RedirectUri.ToString()),
-        },
+                    new Uri("https://localhost:44319/Account/Login"),
+                    new Uri("https://invoice.hds.com/Account/Login"),
+                    new Uri("https://app1.hds.com/Account/Login"),
+                    new Uri("https://localhost/Account/Login")
+                },
                 PostLogoutRedirectUris =
                 {
                     new Uri(LogoutRedirectUri.ToString())
