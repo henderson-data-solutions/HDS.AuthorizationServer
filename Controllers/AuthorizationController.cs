@@ -56,13 +56,6 @@ namespace HDS.AuthorizationServer.Controllers
             _config = config;
         }
 
-        //[HttpGet("~/connect/TwoFactorVerify")]
-        //public async Task<IActionResult> TwoFactoryVerify()
-        //{
-
-        //}
-
-
         [HttpGet("~/connect/authorize")]
         public async Task<IActionResult> Authorize()
         {
@@ -86,7 +79,7 @@ namespace HDS.AuthorizationServer.Controllers
 
             var parameters = _authService.ParseOAuthParameters(HttpContext, new List<string> { Parameters.Prompt });
 
-            var result = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            AuthenticateResult result = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
             if (!_authService.IsAuthenticated(result, request))
             {
@@ -124,38 +117,9 @@ namespace HDS.AuthorizationServer.Controllers
                     paramAuthorize.Add(key, value);
                 }
 
-                //now try to Authorize again
-                string ru = _authService.BuildRedirectUrl(HttpContext.Request, parameters);
-
-                return Challenge(properties: new AuthenticationProperties
-                {
-                    RedirectUri = ru
-                }, new[] { CookieAuthenticationDefaults.AuthenticationScheme });
+                var result1 = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                result = result;
             }
-
-            if (request.HasPrompt(Prompts.Login))
-            {
-                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-
-                return Challenge(properties: new AuthenticationProperties
-                {
-                    RedirectUri = _authService.BuildRedirectUrl(HttpContext.Request, parameters)
-                }, new[] { CookieAuthenticationDefaults.AuthenticationScheme });
-            }
-
-            var consentClaim = result.Principal.GetClaim(Consts.ConsentNaming);
-
-            // it might be extended in a way that consent claim will contain list of allowed client ids.
-            //L@@K - we need to figure out what to do with the claims
-            //if (consentClaim != Consts.GrantAccessValue || request.HasPrompt(Prompts.Consent))
-            //{
-            //    await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-
-            //    var returnUrl = HttpUtility.UrlEncode(_authService.BuildRedirectUrl(HttpContext.Request, parameters));
-            //    var consentRedirectUrl = $"/Consent?returnUrl={returnUrl}";
-
-            //    return Redirect(consentRedirectUrl);
-            //}
 
             var userId = "ldew@hendersondatasolutions.com";
             //var userId = result.Principal.FindFirst(ClaimTypes.Email).Value;
