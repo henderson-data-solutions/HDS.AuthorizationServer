@@ -157,7 +157,8 @@ namespace HDS.AuthorizationServer.Controllers
             //    return Redirect(consentRedirectUrl);
             //}
 
-            var userId = result.Principal.FindFirst(ClaimTypes.Email)!.Value;
+            var userId = "ldew@hendersondatasolutions.com";
+            //var userId = result.Principal.FindFirst(ClaimTypes.Email).Value;
 
             var identity = new ClaimsIdentity(
                 authenticationType: TokenValidationParameters.DefaultAuthenticationType,
