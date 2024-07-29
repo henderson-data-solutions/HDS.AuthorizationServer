@@ -86,52 +86,52 @@ namespace HDS.AuthorizationServer.Controllers
 
             var parameters = _authService.ParseOAuthParameters(HttpContext, new List<string> { Parameters.Prompt });
 
-            var result = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            //var result = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
-            if (!_authService.IsAuthenticated(result, request))
-            {
-                var claims = new List<Claim>();
+            //if (!_authService.IsAuthenticated(result, request))
+            //{
+            //    var claims = new List<Claim>();
 
-                var principal = new ClaimsPrincipal(
-                    new List<ClaimsIdentity>
-                    {
-                    new(claims, CookieAuthenticationDefaults.AuthenticationScheme)
-                    });
+            //    var principal = new ClaimsPrincipal(
+            //        new List<ClaimsIdentity>
+            //        {
+            //        new(claims, CookieAuthenticationDefaults.AuthenticationScheme)
+            //        });
 
-                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+            //    await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
 
-                //get the authentication cookie
-                var url = HttpContext.Request.GetEncodedUrl();
+            //    //get the authentication cookie
+            //    var url = HttpContext.Request.GetEncodedUrl();
 
-                string hdrAuthentication = Response.Headers["Set-Cookie"];
-                string[] authenticationCookie = hdrAuthentication.Split("=");
-                string name = authenticationCookie[0];
-                string AuthenticationCode = "\"" + authenticationCookie[1] + "\"";
+            //    string hdrAuthentication = Response.Headers["Set-Cookie"];
+            //    string[] authenticationCookie = hdrAuthentication.Split("=");
+            //    string name = authenticationCookie[0];
+            //    string AuthenticationCode = "\"" + authenticationCookie[1] + "\"";
 
-                //add the authentication cookie to the container
+            //    //add the authentication cookie to the container
 
-                var baseAddress = new Uri(HttpContext.Request.GetEncodedUrl());
-                var cookieContainer = new CookieContainer();
-                Cookie cookie = new Cookie(name, AuthenticationCode, "\\", baseAddress.Host);
-                cookieContainer.Add(baseAddress, cookie);
+            //    var baseAddress = new Uri(HttpContext.Request.GetEncodedUrl());
+            //    var cookieContainer = new CookieContainer();
+            //    Cookie cookie = new Cookie(name, AuthenticationCode, "\\", baseAddress.Host);
+            //    cookieContainer.Add(baseAddress, cookie);
 
-                //now get the parameters
-                var paramAuthorize = new Dictionary<string, string>();
-                foreach (var param in parameters)
-                {
-                    string key = param.Key;
-                    string value = param.Value;
-                    paramAuthorize.Add(key, value);
-                }
+            //    //now get the parameters
+            //    var paramAuthorize = new Dictionary<string, string>();
+            //    foreach (var param in parameters)
+            //    {
+            //        string key = param.Key;
+            //        string value = param.Value;
+            //        paramAuthorize.Add(key, value);
+            //    }
 
-                //now try to Authorize again
-                string ru = _authService.BuildRedirectUrl(HttpContext.Request, parameters);
+            //    //now try to Authorize again
+            //    string ru = _authService.BuildRedirectUrl(HttpContext.Request, parameters);
 
-                return Challenge(properties: new AuthenticationProperties
-                {
-                    RedirectUri = ru
-                }, new[] { CookieAuthenticationDefaults.AuthenticationScheme });
-            }
+            //    return Challenge(properties: new AuthenticationProperties
+            //    {
+            //        RedirectUri = ru
+            //    }, new[] { CookieAuthenticationDefaults.AuthenticationScheme });
+            //}
 
             if (request.HasPrompt(Prompts.Login))
             {
@@ -143,7 +143,7 @@ namespace HDS.AuthorizationServer.Controllers
                 }, new[] { CookieAuthenticationDefaults.AuthenticationScheme });
             }
 
-            var consentClaim = result.Principal.GetClaim(Consts.ConsentNaming);
+            //var consentClaim = result.Principal.GetClaim(Consts.ConsentNaming);
 
             // it might be extended in a way that consent claim will contain list of allowed client ids.
             //L@@K - we need to figure out what to do with the claims
@@ -157,8 +157,8 @@ namespace HDS.AuthorizationServer.Controllers
             //    return Redirect(consentRedirectUrl);
             //}
 
-            var userId = "ldew@hendersondatasolutions.com";
-            //var userId = result.Principal.FindFirst(ClaimTypes.Email).Value;
+            string userId = parameters["username"];
+
 
             var identity = new ClaimsIdentity(
                 authenticationType: TokenValidationParameters.DefaultAuthenticationType,

@@ -95,7 +95,7 @@ namespace HDS.AuthorizationServer
                     new Uri("https://localhost:44319/Account/Login"),
                     new Uri("https://invoice.hds.com/Account/Login"),
                     new Uri("https://app1.hds.com/Account/Login"),
-                    new Uri("https://localhost:7002")
+                    new Uri("https://localhost:7002/Account/Login")
                 },
                 PostLogoutRedirectUris =
                 {
