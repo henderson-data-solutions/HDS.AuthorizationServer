@@ -53,14 +53,18 @@ public class AuthorizationService
     public static List<string> GetDestinations(ClaimsIdentity identity, Claim claim)
     {
         var destinations = new List<string>();
-
+        //L@@K need to replace the hard coded values below by 
+        //searching the db for all claims in AspNetUserClaims
         if (claim.Type is OpenIddictConstants.Claims.Name 
             or OpenIddictConstants.Claims.Email
             or OpenIddictConstants.Claims.Address
             or "System.Admin"
             or "Invoice.Admin"
             or "Invoice.Read"
-            or "Invoice.ReadWrite")
+            or "Invoice.ReadWrite"
+            or "User.Read" 
+            or "User.ReadWrite"
+            or "User.Admin")
         {
             destinations.Add(OpenIddictConstants.Destinations.AccessToken);
 

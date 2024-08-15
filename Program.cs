@@ -71,6 +71,8 @@ builder.Services.AddOpenIddict()
                 .EnableLogoutEndpointPassthrough()
                 .EnableTokenEndpointPassthrough()
                 .EnableUserinfoEndpointPassthrough();
+
+        options.DisableAccessTokenEncryption();
     });
 
 builder.Services.AddTransient<AuthorizationService>();
