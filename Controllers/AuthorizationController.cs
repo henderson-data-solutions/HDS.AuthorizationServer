@@ -174,11 +174,43 @@ namespace HDS.AuthorizationServer.Controllers
             identity.SetResources(await _scopeManager.ListResourcesAsync(identity.GetScopes()).ToListAsync());
             identity.SetDestinations(c => AuthorizationService.GetDestinations(identity, c));
 
+            bool remember;
+            if (!bool.TryParse(parameters["remember"], out remember))
+            {
+                remember = false;
+            }
+
+            int AccessTokenExtendedLifetime;
+            int AccessTokenDefaultLifetime;
+
+            if(!Int32.TryParse(_config["Authentication:AccessTokenLifetimeExtendedInHours"], out AccessTokenExtendedLifetime))
+            {
+                _logger.LogError("Config setting Authentication:AccessTokenLifetimeExtendedInHours is not an integer. Setting to default value of 24.");
+                AccessTokenExtendedLifetime = 24;
+            }
+
+            if (!Int32.TryParse(_config["Config setting Authentication:AccessTokenLifetimeDefaultInHours"], out AccessTokenDefaultLifetime)) 
+            {
+                _logger.LogError("Authentication:AccessTokenLifetimeDefaultInHours is not an integer. Setting to default value of 1.");
+                AccessTokenDefaultLifetime = 1;
+            }
+
+
+            if (remember)
+            {
+                //remember is checked so keep user logged in for extended period of time
+                identity.SetAccessTokenLifetime(TimeSpan.FromHours(AccessTokenExtendedLifetime));
+                identity.SetIdentityTokenLifetime(TimeSpan.FromHours(AccessTokenExtendedLifetime));
+            }
+            else
+            {
+                //remember is not checked so set default access token lifetime
+                identity.SetAccessTokenLifetime(TimeSpan.FromHours(AccessTokenDefaultLifetime));
+                identity.SetIdentityTokenLifetime(TimeSpan.FromHours(AccessTokenDefaultLifetime));
+            }
+
             return SignIn(new ClaimsPrincipal(identity), OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
         }
-
-
-
 
         [HttpPost("~/connect/token")]
         public async Task<IActionResult> Exchange()

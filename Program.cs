@@ -72,7 +72,10 @@ builder.Services.AddOpenIddict()
                 .EnableTokenEndpointPassthrough()
                 .EnableUserinfoEndpointPassthrough();
 
-        options.DisableAccessTokenEncryption();
+        //options.SetAccessTokenLifetime(TimeSpan.FromHours(1));
+        //options.SetIdentityTokenLifetime(TimeSpan.FromHours(1));
+
+        //options.DisableAccessTokenEncryption();
     });
 
 builder.Services.AddTransient<AuthorizationService>();
