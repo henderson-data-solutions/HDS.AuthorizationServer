@@ -133,7 +133,8 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var seeder = scope.ServiceProvider.GetRequiredService<ClientsSeeder>();
-    
+
+    seeder.AddHdsClient().GetAwaiter().GetResult();
     seeder.AddOidcDebuggerClient().GetAwaiter().GetResult();
     seeder.AddWebClient().GetAwaiter().GetResult();
     seeder.AddReactClient().GetAwaiter().GetResult();

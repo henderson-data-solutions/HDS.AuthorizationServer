@@ -44,6 +44,82 @@ namespace HDS.AuthorizationServer
             });
         }
 
+        public async Task AddHdsClient()
+        {
+            _logger.LogInformation("AddWebClient add client [tokenB456]");
+
+            await using var scope = _serviceProvider.CreateAsyncScope();
+
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            await context.Database.EnsureCreatedAsync();
+
+            var manager = scope.ServiceProvider.GetRequiredService<IOpenIddictApplicationManager>();
+
+            var client = await manager.FindByClientIdAsync("tokenB456");
+            if (client != null)
+            {
+                await manager.DeleteAsync(client);
+            }
+
+            Uri RedirectUri = UriTools.BuildUri(
+                _config["HDSInvoiceServer:UseSSL"],
+                _config["HDSInvoiceServer:UriHost"],
+                _config["HDSInvoiceServer:UriPort"],
+                _config["HDSInvoiceServer:AuthRedirectPath"]);
+
+            Uri SwaggerRedirectUri = UriTools.BuildUri(
+                _config["HDSInvoiceServer:UseSSL"],
+                _config["HDSInvoiceServer:UriHost"],
+                _config["HDSInvoiceServer:UriPort"],
+                _config["HDSInvoiceServer:SwaggerRedirectPath"]);
+
+            Uri LogoutRedirectUri = UriTools.BuildUri(
+                _config["HDSInvoiceServer:UseSSL"],
+                _config["HDSInvoiceServer:UriHost"],
+                _config["HDSInvoiceServer:UriPort"],
+                _config["HDSInvoiceServer:LogoutRedirectPath"]);
+
+            _logger.LogInformation($"AddWebClient set redirect uri [{RedirectUri.ToString()}]");
+            _logger.LogInformation($"AddWebClient set redirect uri [{SwaggerRedirectUri.ToString()}]");
+            _logger.LogInformation($"AddWebClient set logout redirect uri [{LogoutRedirectUri}]");
+            await manager.CreateAsync(new OpenIddictApplicationDescriptor
+            {
+                ClientId = _config["Authentication:hds_client_id"],
+                ClientSecret = _config["Authentication:hds_client_secret"],
+                ConsentType = ConsentTypes.Explicit,
+                DisplayName = _config["Authentication:hds_client_display_name"],
+                RedirectUris =
+                {
+                    new Uri(SwaggerRedirectUri.ToString()),
+                    new Uri(RedirectUri.ToString()),
+                    new Uri("https://localhost:44319/Account/Login"),
+                    new Uri("https://invoice.hds.com/Account/Login"),
+                    new Uri("https://app1.hds.com/Account/Login"),
+                    new Uri("https://localhost:7002/Account/Login")
+                },
+                PostLogoutRedirectUris =
+                {
+                    new Uri(LogoutRedirectUri.ToString())
+                },
+                Permissions =
+                {
+                    Permissions.Endpoints.Authorization,
+                    Permissions.Endpoints.Logout,
+                    Permissions.Endpoints.Token,
+                    Permissions.GrantTypes.AuthorizationCode,
+                    Permissions.ResponseTypes.Code,
+                    Permissions.Scopes.Email,
+                    Permissions.Scopes.Profile,
+                    Permissions.Scopes.Roles,
+                   $"{Permissions.Prefixes.Scope}api1"
+                },
+                //Requirements =
+                //{
+                //    Requirements.Features.ProofKeyForCodeExchange
+                //}
+            });
+        }
+
         public async Task AddWebClient()
         {
             _logger.LogInformation("AddWebClient add client [web-client]");
