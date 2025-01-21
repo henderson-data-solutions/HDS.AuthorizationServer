@@ -47,7 +47,7 @@ namespace HDS.AuthorizationServer.Repository
             var p = new DynamicParameters();
             p.Add("@EmailAddress", email);
 
-            DataToolsReturnObject<AspNetUser> obj = await DataTools.ExecuteStoredProcedure<AspNetUser>("GetUserDataByEmail", p);
+            DataToolsReturnObject<AspNetUser> obj = await DataTools.ExecuteStoredProcedure<AspNetUser>("Saas.GetUserDataByEmail", p);
 
             if(obj.error == string.Empty)
             {

@@ -189,12 +189,11 @@ namespace HDS.AuthorizationServer.Controllers
                 AccessTokenExtendedLifetime = 24;
             }
 
-            if (!Int32.TryParse(_config["Config setting Authentication:AccessTokenLifetimeDefaultInHours"], out AccessTokenDefaultLifetime)) 
+            if (!Int32.TryParse(_config["Authentication:AccessTokenLifetimeDefaultInHours"], out AccessTokenDefaultLifetime)) 
             {
                 _logger.LogError("Authentication:AccessTokenLifetimeDefaultInHours is not an integer. Setting to default value of 1.");
                 AccessTokenDefaultLifetime = 1;
             }
-
 
             if (remember)
             {
